@@ -1,0 +1,37 @@
+---
+- name: Configure server and deploy Flask app
+  hosts: webservers
+  become: yes
+
+  tasks:
+    - name: Update system packages
+      yum:
+        update_cache: yes
+
+    - name: Install Docker
+      yum:
+        name: docker
+        state: present
+
+    - name: Start Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Add ec2-user to docker group
+      user:
+        name: ec2-user
+        groups: docker
+        append: yes
+
+    - name: Copy Flask app to server
+      copy:
+        src: ../app/
+        dest: /home/ec2-user/app/
+
+    - name: Build Docker image
+      command: docker build -t flask-app /home/ec2-user/app/
+
+    - name: Run Flask container
+      command: docker run -d -p 5000:5000 --name flask-app flask-app
